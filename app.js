@@ -4,8 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const ScoreDisplay = document.querySelector('#score')
     const StartBtn = document.querySelector('#start-button')
     const width = 10
+    let nextRandom = 0
 
-//the tetrominoes
+    //the tetrominoes
     const lTetromino = [
         [1,width+1,width*2+1,2], 
         [width,width+1,width+2,width*2+2],
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const theTetrominoes = [lTetromino, zTetromino, tTetromino, oTetromino, iTetromino]
  
     let currentPosition = 4
-    let currentRotaion = 0
+    let currentRotation = 0
 
     //randomly select a Tetromino and its first rotation
     let random = Math.floor(Math.random()*theTetrominoes.length)
@@ -67,6 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
     //make the tetromino move down every second
     timerId = setInterval(moveDown, 1000)
 
+    //assign functions to keyCodes
+    function control(e) {
+        if(e.keyCode === 37) {
+            moveLeft()
+        } else if (e.keyCode === 38) {
+            rotate()
+        } else if (e.keyCode === 39) {
+            moveRight()
+        } else if (e.keyCode === 40) {
+            moveDown()
+        }
+    }
+    document.addEventListener('keyup', control)
+
     //move down function
     function moveDown() {
         undraw()
@@ -80,15 +95,80 @@ document.addEventListener('DOMContentLoaded', () => {
         if(current.some(index => squares[currentPosition + index + width].classList.contains('taken'))) {
             current.forEach(index => squares[currentPosition + index].classList.add('taken'))
             //start new tetromino falling
-            random = Math.floor(Math.random() * theTetrominoes.length)
-            current = theTetrominoes[random][currentRotaion]
+            random = nextRandom
+            nextRandom = Math.floor(Math.random() * theTetrominoes.length)
+            current = theTetrominoes[random][currentRotation]
             currentPosition = 4
             draw()
+            displayShape()
         }
     }
 
+    //move the tetromino left, unless it is at the edge or if there is a blockage
+    function moveLeft() {
+        undraw()
+        const isAtLeftEdge = current.some(index => (currentPosition + index) % width === 0)
+
+        if(!isAtLeftEdge) currentPosition -=1
+
+        if(current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            currentPosition +=1
+        }
+        
+        draw()
+    }
+
+    //move the tetromino right, unless it is at the edge or if there is a blockage
+    function moveRight() {
+        undraw()
+        const isAtRightEdge = current.some(index => (currentPosition + index) % width === width -1)
+
+        if(!isAtRightEdge) currentPosition +=1
+
+        if(current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            currentPosition -=1
+        }
+        
+        draw()
+    }
+
+    //rotate the tetromino
+    function rotate() {
+        undraw()
+        currentRotation ++
+        if(currentRotation === current.length) { //if current rotation is 4 go back to 0
+            currentRotation = 0
+        }
+        current = theTetrominoes[random][currentRotation]
+        draw()
+    }
 
 
+    //show up-next tetromino in mini-grid display
+    const displaySquares = document.querySelectorAll('.mini-grid div')
+    const displayWidth = 4
+    let displayIndex = 0
 
+    //the Tetrominoes without rotations
+    const upNextTetrominoes = [
+        [1,displayWidth+1,displayWidth*2+1,2], //lTetromino
+        [0,displayWidth,displayWidth+1,displayWidth*2+1], //zTetromino
+        [1,displayWidth,displayWidth+1,displayWidth+2], //tTetromino
+        [0,1,displayWidth,displayWidth+1], //oTetromino
+        [1,displayWidth+1,displayWidth*2+1,displayWidth*3+1] //iTetromino
+    ]
+
+    //display the shape in the mini-grid display
+    function displayShape() {
+        //remove any trace of the tetromino from the entire grid
+        displaySquares.forEach(square => {
+            square.classList.remove('tetromino')
+        })
+        upNextTetrominoes[nextRandom].forEach( index => {
+            displaySquares[displayIndex + index].classList.add('tetromino')
+        })
+    }
+
+    
 
 })
